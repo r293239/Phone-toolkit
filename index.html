@@ -20,7 +20,7 @@
     </button>
   </header>
   <main>
-    <!-- Dashboard (default view) -->
+    <!-- Dashboard -->
     <div id="dashboard" class="view active">
       <div class="grid">
         <button class="card" data-tool="thermometer"><i class="fa-solid fa-temperature-half"></i><span>Thermometer</span></button>
@@ -34,11 +34,12 @@
         <button class="card" data-tool="features"><i class="fa-solid fa-mobile-screen"></i><span>Device</span></button>
         <button class="card" data-tool="cooling"><i class="fa-solid fa-fan"></i><span>Cooling</span></button>
         <button class="card" data-tool="flashlight"><i class="fa-solid fa-lightbulb"></i><span>Flashlight</span></button>
-        <button class="card" data-tool="gyroscope"><i class="fa-solid fa-rotate"></i><span>Gyroscope</span></button>
+        <button class="card" data-tool="level"><i class="fa-solid fa-ruler"></i><span>Level</span></button>
+        <button class="card" data-tool="airplane"><i class="fa-solid fa-plane"></i><span>Airplane</span></button>
       </div>
     </div>
 
-    <!-- Individual tool views -->
+    <!-- Thermometer -->
     <div id="thermometerView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Thermometer</h2>
@@ -50,12 +51,14 @@
       <div id="weatherExtra" class="weather-extra"></div>
     </div>
 
+    <!-- Weather -->
     <div id="weatherView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Weather Forecast</h2>
       <div id="weatherContent">Loading...</div>
     </div>
 
+    <!-- Compass -->
     <div id="compassView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Compass</h2>
@@ -68,12 +71,14 @@
       <p id="compassDirection">N</p>
     </div>
 
+    <!-- GPS -->
     <div id="gpsView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>GPS Information</h2>
       <div id="gpsData">Waiting for location...</div>
     </div>
 
+    <!-- Transit -->
     <div id="transitView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Public Transport Nearby</h2>
@@ -81,6 +86,7 @@
       <div id="transitList">Searching nearby stops...</div>
     </div>
 
+    <!-- Navigation -->
     <div id="navigationView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Navigate</h2>
@@ -92,12 +98,14 @@
       <div id="navigationInfo"></div>
     </div>
 
+    <!-- Elevation -->
     <div id="elevationView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Elevation Meter</h2>
       <div id="elevationData">Getting altitude...</div>
     </div>
 
+    <!-- Camera -->
     <div id="cameraView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Camera</h2>
@@ -107,16 +115,18 @@
       <img id="capturedImage" style="max-width:100%; display:none;">
     </div>
 
+    <!-- Device Features -->
     <div id="featuresView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Device Features</h2>
       <div id="featuresList"></div>
     </div>
 
+    <!-- Cooling -->
     <div id="coolingView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Phone Cooling</h2>
-      <p>Press the button to activate cooling (uses vibration).</p>
+      <p>Simulated cooling (real temperature not available in browser)</p>
       <div class="cooling-display">
         <div class="fan-container">
           <div class="fan-blade" id="coolingFan"><i class="fa-solid fa-fan"></i></div>
@@ -128,6 +138,7 @@
       <button id="startCoolingBtn" class="big-btn">Start Cooling</button>
     </div>
 
+    <!-- Flashlight -->
     <div id="flashlightView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Flashlight</h2>
@@ -135,16 +146,31 @@
       <button id="torchToggle" class="big-btn">Turn On</button>
     </div>
 
-    <div id="gyroscopeView" class="view">
+    <!-- Level (replaces old Gyroscope) -->
+    <div id="levelView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
-      <h2>Gyroscope</h2>
-      <div class="gyro-visual">
-        <div class="attitude-container">
-          <div class="horizon-bg"></div>
-          <div class="aircraft">✈</div>
+      <h2>Level</h2>
+      <div class="level-container">
+        <div class="level-dial">
+          <div class="level-bubble"></div>
+          <div class="level-crosshair"></div>
         </div>
       </div>
-      <div id="gyroData">No motion data</div>
+      <div id="levelData">
+        <p>Pitch: <span id="pitchValue">0°</span></p>
+        <p>Roll: <span id="rollValue">0°</span></p>
+      </div>
+    </div>
+
+    <!-- Airplane Mode -->
+    <div id="airplaneView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Airplane Mode</h2>
+      <p>Web apps cannot toggle airplane mode directly.<br>Use your device’s quick settings instead.</p>
+      <button id="airplaneToggle" class="big-btn airplane-btn">
+        <i class="fa-solid fa-plane"></i> Enable Airplane Mode
+      </button>
+      <p id="airplaneStatus"></p>
     </div>
   </main>
 
