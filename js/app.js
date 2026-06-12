@@ -49,7 +49,8 @@ function initTool(tool) {
     case 'features': showFeatures(); break;
     case 'cooling': startCooling(); break;
     case 'flashlight': startFlashlight(); break;
-    case 'gyroscope': startGyroscope(); break;
+    case 'level': startLevel(); break;
+    case 'airplane': startAirplane(); break;
   }
 }
 
@@ -349,24 +350,20 @@ function showFeatures() {
   features.push(`Touch: ${('ontouchstart' in window) ? 'Yes' : 'No'}`);
   features.push(`Platform: ${navigator.platform}`);
   
-  // Device model
+  // Device model detection (improved)
+  let model = 'Not detected';
   if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
     navigator.userAgentData.getHighEntropyValues(['model']).then(ua => {
       if (ua.model) {
-        features.push(`Device Model: ${ua.model}`);
+        features.splice(3, 0, `Device Model: ${ua.model}`);
+      } else {
+        features.splice(3, 0, `Device Model: ${guessModel()}`);
       }
       updateFeaturesList();
     });
   } else {
-    const ua = navigator.userAgent;
-    let model = 'Not detected';
-    if (ua.includes('iPhone')) model = 'iPhone';
-    else if (ua.includes('iPad')) model = 'iPad';
-    else if (ua.includes('Android')) {
-      const match = ua.match(/\(Android.*?;\s*([^;)]+?)\s*(?:Build|;)/);
-      if (match) model = match[1].trim();
-    }
-    features.push(`Device Model: ${model}`);
+    model = guessModel();
+    features.splice(3, 0, `Device Model: ${model}`);
   }
   
   features.push(`Vibration: ${('vibrate' in navigator) ? 'Supported' : 'No'}`);
@@ -383,6 +380,17 @@ function showFeatures() {
   features.push(`Device Memory: ${navigator.deviceMemory || 'unknown'} GB`);
   features.push(`Languages: ${navigator.languages.join(', ')}`);
   
+  function guessModel() {
+    const ua = navigator.userAgent;
+    if (ua.includes('iPhone')) return 'iPhone';
+    if (ua.includes('iPad')) return 'iPad';
+    if (ua.includes('Android')) {
+      const match = ua.match(/\(Android.*?;\s*([^;)]+?)\s*(?:Build|;)/);
+      if (match) return match[1].trim();
+    }
+    return 'Unknown';
+  }
+  
   function updateFeaturesList() {
     document.getElementById('featuresList').innerHTML = features.map(f => `<p>${f}</p>`).join('');
   }
@@ -398,9 +406,8 @@ function startCooling() {
   const fan = document.getElementById('coolingFan');
   const tempEl = document.getElementById('coolingTemp');
   
-  btn.addEventListener('click', () => {
+  btn.onclick = () => {
     if (coolingActive) {
-      // stop cooling
       clearInterval(coolingInterval);
       if (navigator.vibrate) navigator.vibrate(0);
       fan.classList.remove('spinning');
@@ -409,7 +416,6 @@ function startCooling() {
       return;
     }
     
-    // start cooling
     coolingActive = true;
     btn.textContent = 'Stop Cooling';
     fan.classList.add('spinning');
@@ -417,7 +423,6 @@ function startCooling() {
     let temp = 40;
     tempEl.textContent = temp + '°C';
     
-    // vibration pattern: short pulses every 0.5 sec
     if (navigator.vibrate) {
       navigator.vibrate([100, 400]);
       coolingInterval = setInterval(() => {
@@ -434,7 +439,6 @@ function startCooling() {
         tempEl.textContent = temp + '°C';
       }, 1000);
     } else {
-      // fallback without vibration
       coolingInterval = setInterval(() => {
         temp -= 1;
         if (temp <= 35) {
@@ -447,7 +451,7 @@ function startCooling() {
         tempEl.textContent = temp + '°C';
       }, 1000);
     }
-  });
+  };
 }
 
 // ---------- FLASHLIGHT ----------
@@ -473,44 +477,65 @@ async function startFlashlight() {
   };
 }
 
-// ---------- GYROSCOPE ----------
-let gyroActive = false;
-function startGyroscope() {
-  const div = document.getElementById('gyroData');
-  const horizon = document.querySelector('.horizon-bg');
+// ---------- LEVEL (replaces old gyroscope) ----------
+let levelActive = false;
+function startLevel() {
+  if (levelActive) return;
   
-  if (gyroActive) return;
+  const bubble = document.querySelector('.level-bubble');
+  const pitchSpan = document.getElementById('pitchValue');
+  const rollSpan = document.getElementById('rollValue');
   
-  // iOS 13+ requires permission
+  // iOS permission request
   if (typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission()
-      .then(permissionState => {
-        if (permissionState === 'granted') {
-          enableGyro();
-        } else {
-          div.textContent = 'Motion permission denied';
-        }
+      .then(state => {
+        if (state === 'granted') enableLevel();
+        else alert('Motion permission denied');
       })
       .catch(console.error);
   } else {
-    enableGyro();
+    enableLevel();
   }
   
-  function enableGyro() {
-    gyroActive = true;
+  function enableLevel() {
+    levelActive = true;
     window.addEventListener('deviceorientation', handleOrientation);
   }
   
   function handleOrientation(e) {
-    const alpha = e.alpha?.toFixed(1) || 0; // heading
-    const beta  = e.beta  || 0;  // pitch (front/back)
-    const gamma = e.gamma || 0;  // roll (left/right)
+    const beta  = e.beta  || 0;  // pitch (forward/back tilt)
+    const gamma = e.gamma || 0;  // roll (left/right tilt)
     
-    div.innerHTML = `yaw: ${alpha}°<br>pitch: ${beta.toFixed(1)}°<br>roll: ${gamma.toFixed(1)}°`;
+    // Update numbers
+    pitchSpan.textContent = beta.toFixed(1) + '°';
+    rollSpan.textContent = gamma.toFixed(1) + '°';
     
-    // artificial horizon: rotate by gamma, translate vertically by beta
-    const rotate = gamma;
-    const translateY = (beta / 90) * 50; // move horizon up/down in percentage of half container
-    horizon.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) translateY(${translateY}%)`;
+    // Bubble movement: translate based on gamma (X) and beta (Y)
+    // Max movement: 50px from center (half the dial radius minus bubble radius)
+    const maxMove = 70; // pixels
+    const moveX = Math.max(-maxMove, Math.min(maxMove, gamma * (maxMove / 45)));
+    const moveY = Math.max(-maxMove, Math.min(maxMove, -beta * (maxMove / 45))); // negative because beta goes opposite
+    bubble.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
   }
+}
+
+// ---------- AIRPLANE MODE ----------
+function startAirplane() {
+  const btn = document.getElementById('airplaneToggle');
+  const status = document.getElementById('airplaneStatus');
+  let isOn = false;
+  
+  btn.onclick = () => {
+    isOn = !isOn;
+    if (isOn) {
+      btn.innerHTML = '<i class="fa-solid fa-plane"></i> Disable Airplane Mode';
+      btn.style.background = '#ef4444';
+      status.textContent = 'Airplane mode is ON (simulated – no actual change)';
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-plane"></i> Enable Airplane Mode';
+      btn.style.background = '';
+      status.textContent = 'Airplane mode is OFF';
+    }
+  };
 }
