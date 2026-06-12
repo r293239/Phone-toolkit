@@ -1,3 +1,22 @@
+// ---- Theme Toggle ----
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = themeToggle.querySelector('i');
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+  document.body.classList.add('light-mode');
+  themeIcon.classList.replace('fa-moon', 'fa-sun');
+}
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light-mode');
+  if (document.body.classList.contains('light-mode')) {
+    themeIcon.classList.replace('fa-moon', 'fa-sun');
+    localStorage.setItem('theme', 'light');
+  } else {
+    themeIcon.classList.replace('fa-sun', 'fa-moon');
+    localStorage.setItem('theme', 'dark');
+  }
+});
+
 // ---- Navigation ----
 document.querySelectorAll('.card').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -28,7 +47,7 @@ function initTool(tool) {
     case 'elevation': startElevation(); break;
     case 'camera': startCamera(); break;
     case 'features': showFeatures(); break;
-    case 'cooling': break; // purely CSS animation
+    case 'cooling': break;
     case 'flashlight': startFlashlight(); break;
     case 'gyroscope': startGyroscope(); break;
   }
@@ -36,9 +55,22 @@ function initTool(tool) {
 
 // ---------- THERMOMETER & WEATHER ----------
 async function fetchWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&hourly=relativehumidity_2m`;
   const res = await fetch(url);
   return res.json();
+}
+
+function getWeatherDesc(code) {
+  const desc = {
+    0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+    45: 'Foggy', 48: 'Rime fog', 51: 'Light drizzle', 53: 'Moderate drizzle',
+    55: 'Dense drizzle', 61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+    71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow', 77: 'Snow grains',
+    80: 'Slight showers', 81: 'Moderate showers', 82: 'Violent showers',
+    85: 'Slight snow showers', 86: 'Heavy snow showers', 95: 'Thunderstorm',
+    96: 'T-storm + hail', 99: 'T-storm + heavy hail'
+  };
+  return desc[code] || 'Unknown';
 }
 
 function startThermometer() {
@@ -51,9 +83,17 @@ function startThermometer() {
     const data = await fetchWeather(latitude, longitude);
     const temp = data.current_weather.temperature;
     document.getElementById('tempValue').textContent = temp + '°C';
-    // adjust mercury height (mocked range -10 to 40°C)
     const percent = Math.min(100, Math.max(0, ((temp + 10) / 50) * 100));
     document.querySelector('.mercury').style.height = percent + '%';
+    // extra data
+    const humidity = data.hourly.relativehumidity_2m[0];
+    const wind = data.current_weather.windspeed;
+    const desc = getWeatherDesc(data.current_weather.weathercode);
+    document.getElementById('weatherExtra').innerHTML = `
+      <p>${desc}</p>
+      <p>Humidity: ${humidity}%</p>
+      <p>Wind: ${wind} km/h</p>
+    `;
   }, () => {
     document.getElementById('tempValue').textContent = 'Location denied';
   });
@@ -65,13 +105,13 @@ function startWeather() {
     const { latitude, longitude } = pos.coords;
     const data = await fetchWeather(latitude, longitude);
     const daily = data.daily;
-    let html = `<p><strong>Now:</strong> ${data.current_weather.temperature}°C (wind ${data.current_weather.windspeed} km/h)</p>`;
+    let html = `<p><strong>Now:</strong> ${data.current_weather.temperature}°C, ${getWeatherDesc(data.current_weather.weathercode)} (wind ${data.current_weather.windspeed} km/h)</p>`;
     html += '<h3>7-Day Forecast</h3><ul>';
     for(let i=0; i<7; i++) {
       const day = new Date(daily.time[i]).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
       const wcode = daily.weathercode[i];
       const icon = getWeatherIcon(wcode);
-      html += `<li>${day}: ${daily.temperature_2m_max[i]}° / ${daily.temperature_2m_min[i]}° ${icon}</li>`;
+      html += `<li>${day}: ${daily.temperature_2m_max[i]}° / ${daily.temperature_2m_min[i]}° ${icon} – ${getWeatherDesc(wcode)}</li>`;
     }
     html += '</ul>';
     document.getElementById('weatherContent').innerHTML = html;
@@ -93,15 +133,23 @@ function getWeatherIcon(code) {
 function startCompass() {
   const arrow = document.querySelector('.compass-rose');
   const headingP = document.getElementById('compassHeading');
+  const dirP = document.getElementById('compassDirection');
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (event) => {
       const heading = event.webkitCompassHeading || Math.abs(event.alpha - 360);
       arrow.style.transform = `rotate(${heading}deg)`;
       headingP.textContent = Math.round(heading) + '°';
+      dirP.textContent = getCompassDirection(heading);
     });
   } else {
     headingP.textContent = 'Compass not supported';
   }
+}
+
+function getCompassDirection(deg) {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const index = Math.round(deg / 45) % 8;
+  return directions[index];
 }
 
 // ---------- GPS ----------
@@ -123,7 +171,8 @@ function startGPS() {
   }, err => div.textContent = 'Error: ' + err.message);
 }
 
-// ---------- TRANSIT (Overpass) ----------
+// ---------- TRANSIT (with Leaflet map) ----------
+let transitMap;
 async function startTransit() {
   const div = document.getElementById('transitList');
   if (!navigator.geolocation) {
@@ -132,7 +181,20 @@ async function startTransit() {
   }
   navigator.geolocation.getCurrentPosition(async pos => {
     const { latitude, longitude } = pos.coords;
-    const radius = 500; // meters
+    // init map if not already
+    if (!transitMap) {
+      transitMap = L.map('transitMap').setView([latitude, longitude], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(transitMap);
+    } else {
+      transitMap.setView([latitude, longitude], 15);
+    }
+    // user marker
+    L.marker([latitude, longitude]).addTo(transitMap).bindPopup('You are here').openPopup();
+
+    const radius = 500;
     const query = `[out:json];(node["highway"="bus_stop"](around:${radius},${latitude},${longitude});node["public_transport"="platform"](around:${radius},${latitude},${longitude}););out body;`;
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
     try {
@@ -146,6 +208,10 @@ async function startTransit() {
       data.elements.forEach(el => {
         const name = el.tags?.name || 'Unnamed stop';
         html += `<li>${name}</li>`;
+        // add marker
+        if (el.lat && el.lon) {
+          L.marker([el.lat, el.lon]).addTo(transitMap).bindPopup(name);
+        }
       });
       html += '</ul>';
       div.innerHTML = html;
@@ -165,7 +231,6 @@ function startNavigation() {
       attribution: '© OpenStreetMap'
     }).addTo(navMap);
   }
-  // locate user
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude;
@@ -178,7 +243,6 @@ function startNavigation() {
   document.getElementById('startNavBtn').onclick = async () => {
     const input = document.getElementById('destinationInput').value;
     if (!input) return;
-    // Geocode destination with Nominatim
     const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}`;
     const geoRes = await fetch(nomUrl).then(r => r.json());
     if (geoRes.length === 0) return alert('Place not found');
@@ -186,7 +250,6 @@ function startNavigation() {
     const destLatLng = [parseFloat(dest.lat), parseFloat(dest.lon)];
     L.marker(destLatLng).addTo(navMap).bindPopup(dest.display_name);
 
-    // Route via OSRM
     const { lat, lng } = window.currentLatLng;
     const routeUrl = `https://router.project-osrm.org/route/v1/driving/${lng},${lat};${dest.lon},${dest.lat}?overview=full&geometries=geojson`;
     const routeRes = await fetch(routeUrl).then(r => r.json());
@@ -210,7 +273,6 @@ function startElevation() {
   navigator.geolocation.getCurrentPosition(async pos => {
     const { latitude, longitude, altitude } = pos.coords;
     let gpsAlt = altitude ? `${altitude.toFixed(1)} m (GPS)` : 'GPS altitude unavailable';
-    // Open-Elevation lookup
     try {
       const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${latitude},${longitude}`);
       const data = await res.json();
@@ -243,7 +305,6 @@ async function startCamera() {
   };
 }
 
-// cleanup camera when leaving view
 document.querySelectorAll('.back-btn').forEach(b => {
   b.addEventListener('click', () => {
     if (cameraStream) {
@@ -262,6 +323,58 @@ function showFeatures() {
   features.push(`Vibration: ${('vibrate' in navigator) ? 'Supported' : 'No'}`);
   if ('connection' in navigator) {
     const conn = navigator.connection;
+    features.push(`Network: ${conn.effectiveType} (downlink: ${conn.downlink} Mbps)`);
+  }
+  if ('getBattery' in navigator) {
+    navigator.getBattery().then(b => {
+      features.push(`Battery: ${Math.round(b.level*100)}% ${b.charging ? '(charging)' : ''}`);
+    });
+  }
+  features.push(`Device Memory: ${navigator.deviceMemory || 'unknown'} GB`);
+  features.push(`Languages: ${navigator.languages.join(', ')}`);
+  document.getElementById('featuresList').innerHTML = features.map(f => `<p>${f}</p>`).join('');
+}
+
+// ---------- FLASHLIGHT ----------
+let torchTrack;
+async function startFlashlight() {
+  const btn = document.getElementById('torchToggle');
+  btn.onclick = async () => {
+    if (torchTrack) {
+      torchTrack.applyConstraints({ advanced: [{ torch: false }] });
+      btn.textContent = 'Turn On';
+      torchTrack = null;
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const track = stream.getVideoTracks()[0];
+      await track.applyConstraints({ advanced: [{ torch: true }] });
+      torchTrack = track;
+      btn.textContent = 'Turn Off';
+    } catch (e) {
+      alert('Torch not available: ' + e.message);
+    }
+  };
+}
+
+// ---------- GYROSCOPE ----------
+let gyroActive = false;
+function startGyroscope() {
+  const div = document.getElementById('gyroData');
+  const horizon = document.querySelector('.horizon');
+  if (gyroActive) return;
+  gyroActive = true;
+  window.addEventListener('deviceorientation', (e) => {
+    div.innerHTML = `alpha: ${e.alpha?.toFixed(1)}°<br>beta: ${e.beta?.toFixed(1)}°<br>gamma: ${e.gamma?.toFixed(1)}°`;
+    // update attitude indicator
+    const gamma = e.gamma || 0;   // left-right tilt
+    const beta  = e.beta  || 0;   // front-back tilt
+    const rotate = gamma;
+    const translateY = (beta / 90) * 50; // move horizon up/down
+    horizon.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) translateY(${translateY}px)`;
+  });
+} = navigator.connection;
     features.push(`Network: ${conn.effectiveType} (downlink: ${conn.downlink} Mbps)`);
   }
   if ('getBattery' in navigator) {
