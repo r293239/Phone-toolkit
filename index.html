@@ -116,10 +116,16 @@
     <div id="coolingView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Phone Cooling</h2>
-      <div class="fan-container">
-        <div class="fan-blade"><i class="fa-solid fa-fan"></i></div>
+      <p>Press the button to activate cooling (uses vibration).</p>
+      <div class="cooling-display">
+        <div class="fan-container">
+          <div class="fan-blade" id="coolingFan"><i class="fa-solid fa-fan"></i></div>
+        </div>
+        <div class="temp-indicator">
+          <span id="coolingTemp">40°C</span>
+        </div>
       </div>
-      <p>Your phone is now <strong>5°C cooler!</strong></p>
+      <button id="startCoolingBtn" class="big-btn">Start Cooling</button>
     </div>
 
     <div id="flashlightView" class="view">
@@ -133,8 +139,9 @@
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Gyroscope</h2>
       <div class="gyro-visual">
-        <div class="attitude-indicator">
-          <div class="horizon"></div>
+        <div class="attitude-container">
+          <div class="horizon-bg"></div>
+          <div class="aircraft">✈</div>
         </div>
       </div>
       <div id="gyroData">No motion data</div>
