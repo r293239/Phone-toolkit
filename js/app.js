@@ -191,6 +191,10 @@ async function startTransit() {
     } else {
       transitMap.setView([latitude, longitude], 15);
     }
+    // clear old markers (except tile layer)
+    transitMap.eachLayer(layer => {
+      if (layer instanceof L.Marker) transitMap.removeLayer(layer);
+    });
     // user marker
     L.marker([latitude, longitude]).addTo(transitMap).bindPopup('You are here').openPopup();
 
@@ -208,7 +212,6 @@ async function startTransit() {
       data.elements.forEach(el => {
         const name = el.tags?.name || 'Unnamed stop';
         html += `<li>${name}</li>`;
-        // add marker
         if (el.lat && el.lon) {
           L.marker([el.lat, el.lon]).addTo(transitMap).bindPopup(name);
         }
@@ -221,42 +224,207 @@ async function startTransit() {
   });
 }
 
-// ---------- NAVIGATION (Leaflet + OSRM) ----------
-let navMap;
+// ---------- NAVIGATION (Refactored) ----------
+let navMap = null;
+let currentLatLng = null;
+
 function startNavigation() {
+  // Init map only once
   if (!navMap) {
     navMap = L.map('navigationMap').setView([0, 0], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(navMap);
+    
+    // Attach the Go button handler only once
+    document.getElementById('startNavBtn').addEventListener('click', handleNavigationRoute);
   }
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    navMap.setView([lat, lng], 14);
-    L.marker([lat, lng]).addTo(navMap).bindPopup('You are here').openPopup();
-    window.currentLatLng = { lat, lng };
+  
+  // Request current location every time the view is opened
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude } = pos.coords;
+      currentLatLng = { lat: latitude, lng: longitude };
+      navMap.setView([latitude, longitude], 14);
+      
+      // Remove old user marker and other markers (but not tile layer)
+      navMap.eachLayer(layer => {
+        if (layer instanceof L.Marker) navMap.removeLayer(layer);
+      });
+      
+      L.marker([latitude, longitude])
+        .addTo(navMap)
+        .bindPopup('You are here')
+        .openPopup();
+    }, err => {
+      alert('Could not get location: ' + err.message);
+    });
+  } else {
+    alert('Geolocation not supported');
+  }
+}
+
+async function handleNavigationRoute() {
+  const input = document.getElementById('destinationInput').value.trim();
+  if (!input) {
+    alert('Please enter a destination');
+    return;
+  }
+  
+  if (!currentLatLng) {
+    alert('Your location is not yet available. Please wait or grant permission.');
+    return;
+  }
+  
+  // Geocode destination
+  const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}`;
+  const geoRes = await fetch(nomUrl).then(r => r.json());
+  if (geoRes.length === 0) {
+    alert('Place not found');
+    return;
+  }
+  
+  const dest = geoRes[0];
+  const destLatLng = [parseFloat(dest.lat), parseFloat(dest.lon)];
+  
+  // Add destination marker
+  L.marker(destLatLng).addTo(navMap).bindPopup(dest.display_name);
+  
+  // Get route
+  const { lat, lng } = currentLatLng;
+  const routeUrl = `https://router.project-osrm.org/route/v1/driving/${lng},${lat};${dest.lon},${dest.lat}?overview=full&geometries=geojson`;
+  const routeRes = await fetch(routeUrl).then(r => r.json());
+  
+  if (routeRes.code !== 'Ok') {
+    alert('No route found');
+    return;
+  }
+  
+  const routeCoords = routeRes.routes[0].geometry.coordinates;
+  const polyline = L.polyline(
+    routeCoords.map(c => [c[1], c[0]]),
+    { color: '#38bdf8', weight: 5 }
+  ).addTo(navMap);
+  
+  navMap.fitBounds(polyline.getBounds());
+  
+  const dist = (routeRes.routes[0].distance / 1000).toFixed(1);
+  const dur = Math.round(routeRes.routes[0].duration / 60);
+  document.getElementById('navigationInfo').textContent = `Distance: ${dist} km, Duration: ${dur} min`;
+}
+
+// ---------- ELEVATION ----------
+function startElevation() {
+  const div = document.getElementById('elevationData');
+  if (!navigator.geolocation) {
+    div.textContent = 'Geolocation not supported';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude, longitude, altitude } = pos.coords;
+    let gpsAlt = altitude ? `${altitude.toFixed(1)} m (GPS)` : 'GPS altitude unavailable';
+    try {
+      const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${latitude},${longitude}`);
+      const data = await res.json();
+      const demAlt = data.results[0].elevation.toFixed(1);
+      div.innerHTML = `DEM elevation: ${demAlt} m<br>${gpsAlt}`;
+    } catch {
+      div.textContent = gpsAlt;
+    }
   });
+}
 
-  document.getElementById('startNavBtn').onclick = async () => {
-    const input = document.getElementById('destinationInput').value;
-    if (!input) return;
-    const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}`;
-    const geoRes = await fetch(nomUrl).then(r => r.json());
-    if (geoRes.length === 0) return alert('Place not found');
-    const dest = geoRes[0];
-    const destLatLng = [parseFloat(dest.lat), parseFloat(dest.lon)];
-    L.marker(destLatLng).addTo(navMap).bindPopup(dest.display_name);
+// ---------- CAMERA ----------
+let cameraStream;
+async function startCamera() {
+  const video = document.getElementById('cameraPreview');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = cameraStream;
+  } catch (e) {
+    alert('Camera access denied');
+  }
+  document.getElementById('captureBtn').onclick = () => {
+    const canvas = document.getElementById('cameraCanvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const img = document.getElementById('capturedImage');
+    img.src = canvas.toDataURL('image/png');
+    img.style.display = 'block';
+  };
+}
 
-    const { lat, lng } = window.currentLatLng;
-    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${lng},${lat};${dest.lon},${dest.lat}?overview=full&geometries=geojson`;
-    const routeRes = await fetch(routeUrl).then(r => r.json());
-    if (routeRes.code !== 'Ok') return alert('No route found');
-    const routeCoords = routeRes.routes[0].geometry.coordinates;
-    const polyline = L.polyline(routeCoords.map(c => [c[1], c[0]]), {color: '#38bdf8'}).addTo(navMap);
-    navMap.fitBounds(polyline.getBounds());
+document.querySelectorAll('.back-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+  });
+});
+
+// ---------- DEVICE FEATURES ----------
+function showFeatures() {
+  const features = [];
+  features.push(`Screen: ${screen.width}x${screen.height} (colorDepth: ${screen.colorDepth})`);
+  features.push(`Touch: ${('ontouchstart' in window) ? 'Yes' : 'No'}`);
+  features.push(`Platform: ${navigator.platform}`);
+  features.push(`Vibration: ${('vibrate' in navigator) ? 'Supported' : 'No'}`);
+  if ('connection' in navigator) {
+    const conn = navigator.connection;
+    features.push(`Network: ${conn.effectiveType} (downlink: ${conn.downlink} Mbps)`);
+  }
+  if ('getBattery' in navigator) {
+    navigator.getBattery().then(b => {
+      features.push(`Battery: ${Math.round(b.level*100)}% ${b.charging ? '(charging)' : ''}`);
+    });
+  }
+  features.push(`Device Memory: ${navigator.deviceMemory || 'unknown'} GB`);
+  features.push(`Languages: ${navigator.languages.join(', ')}`);
+  document.getElementById('featuresList').innerHTML = features.map(f => `<p>${f}</p>`).join('');
+}
+
+// ---------- FLASHLIGHT ----------
+let torchTrack;
+async function startFlashlight() {
+  const btn = document.getElementById('torchToggle');
+  btn.onclick = async () => {
+    if (torchTrack) {
+      torchTrack.applyConstraints({ advanced: [{ torch: false }] });
+      btn.textContent = 'Turn On';
+      torchTrack = null;
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const track = stream.getVideoTracks()[0];
+      await track.applyConstraints({ advanced: [{ torch: true }] });
+      torchTrack = track;
+      btn.textContent = 'Turn Off';
+    } catch (e) {
+      alert('Torch not available: ' + e.message);
+    }
+  };
+}
+
+// ---------- GYROSCOPE ----------
+let gyroActive = false;
+function startGyroscope() {
+  const div = document.getElementById('gyroData');
+  const horizon = document.querySelector('.horizon');
+  if (gyroActive) return;
+  gyroActive = true;
+  window.addEventListener('deviceorientation', (e) => {
+    div.innerHTML = `alpha: ${e.alpha?.toFixed(1)}°<br>beta: ${e.beta?.toFixed(1)}°<br>gamma: ${e.gamma?.toFixed(1)}°`;
+    const gamma = e.gamma || 0;
+    const beta  = e.beta  || 0;
+    const rotate = gamma;
+    const translateY = (beta / 90) * 50;
+    horizon.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) translateY(${translateY}px)`;
+  });
+    }.fitBounds(polyline.getBounds());
     const dist = (routeRes.routes[0].distance / 1000).toFixed(1);
     const dur = Math.round(routeRes.routes[0].duration / 60);
     document.getElementById('navigationInfo').textContent = `Distance: ${dist} km, Duration: ${dur} min`;
