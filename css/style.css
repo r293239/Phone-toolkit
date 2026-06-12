@@ -1,0 +1,183 @@
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --primary: #38bdf8;
+  --text: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --danger: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+header {
+  background: var(--surface);
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.view {
+  display: none;
+  padding: 1.5rem;
+}
+
+.view.active {
+  display: block;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--surface);
+  border: none;
+  border-radius: 1rem;
+  padding: 1.5rem 1rem;
+  color: var(--text);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+}
+
+.card i {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  background: #334155;
+}
+
+.back-btn {
+  background: var(--surface);
+  border: none;
+  color: var(--primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.big-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: #0f172a;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+
+/* Thermometer */
+.thermometer-display {
+  margin: 2rem auto;
+  width: 80px;
+  height: 220px;
+  background: #1e293b;
+  border-radius: 40px;
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #475569;
+}
+.mercury {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(to top, #ef4444, #f97316);
+  height: 0%;
+  transition: height 1s;
+}
+.thermometer-display span {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: -2.5rem;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Compass */
+.compass-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+.compass-rose {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 6px solid #38bdf8;
+  transform: rotate(0deg);
+  transition: transform 0.2s;
+}
+.compass-rose i {
+  font-size: 3rem;
+  color: #ef4444;
+}
+#compassHeading {
+  text-align: center;
+  font-size: 2rem;
+}
+
+/* Maps */
+#navigationMap {
+  height: 300px;
+  width: 100%;
+  margin: 1rem 0;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* Cooling fan */
+.fan-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+.fan-blade i {
+  font-size: 5rem;
+  color: #38bdf8;
+  animation: spin 0.5s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
