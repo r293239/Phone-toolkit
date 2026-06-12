@@ -47,7 +47,7 @@ function initTool(tool) {
     case 'elevation': startElevation(); break;
     case 'camera': startCamera(); break;
     case 'features': showFeatures(); break;
-    case 'cooling': break;
+    case 'cooling': startCooling(); break;
     case 'flashlight': startFlashlight(); break;
     case 'gyroscope': startGyroscope(); break;
   }
@@ -348,6 +348,27 @@ function showFeatures() {
   features.push(`Screen: ${screen.width}x${screen.height} (colorDepth: ${screen.colorDepth})`);
   features.push(`Touch: ${('ontouchstart' in window) ? 'Yes' : 'No'}`);
   features.push(`Platform: ${navigator.platform}`);
+  
+  // Device model
+  if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+    navigator.userAgentData.getHighEntropyValues(['model']).then(ua => {
+      if (ua.model) {
+        features.push(`Device Model: ${ua.model}`);
+      }
+      updateFeaturesList();
+    });
+  } else {
+    const ua = navigator.userAgent;
+    let model = 'Not detected';
+    if (ua.includes('iPhone')) model = 'iPhone';
+    else if (ua.includes('iPad')) model = 'iPad';
+    else if (ua.includes('Android')) {
+      const match = ua.match(/\(Android.*?;\s*([^;)]+?)\s*(?:Build|;)/);
+      if (match) model = match[1].trim();
+    }
+    features.push(`Device Model: ${model}`);
+  }
+  
   features.push(`Vibration: ${('vibrate' in navigator) ? 'Supported' : 'No'}`);
   if ('connection' in navigator) {
     const conn = navigator.connection;
@@ -356,11 +377,77 @@ function showFeatures() {
   if ('getBattery' in navigator) {
     navigator.getBattery().then(b => {
       features.push(`Battery: ${Math.round(b.level*100)}% ${b.charging ? '(charging)' : ''}`);
+      updateFeaturesList();
     });
   }
   features.push(`Device Memory: ${navigator.deviceMemory || 'unknown'} GB`);
   features.push(`Languages: ${navigator.languages.join(', ')}`);
-  document.getElementById('featuresList').innerHTML = features.map(f => `<p>${f}</p>`).join('');
+  
+  function updateFeaturesList() {
+    document.getElementById('featuresList').innerHTML = features.map(f => `<p>${f}</p>`).join('');
+  }
+  updateFeaturesList();
+}
+
+// ---------- COOLING ----------
+let coolingInterval;
+let coolingActive = false;
+
+function startCooling() {
+  const btn = document.getElementById('startCoolingBtn');
+  const fan = document.getElementById('coolingFan');
+  const tempEl = document.getElementById('coolingTemp');
+  
+  btn.addEventListener('click', () => {
+    if (coolingActive) {
+      // stop cooling
+      clearInterval(coolingInterval);
+      if (navigator.vibrate) navigator.vibrate(0);
+      fan.classList.remove('spinning');
+      btn.textContent = 'Start Cooling';
+      coolingActive = false;
+      return;
+    }
+    
+    // start cooling
+    coolingActive = true;
+    btn.textContent = 'Stop Cooling';
+    fan.classList.add('spinning');
+    
+    let temp = 40;
+    tempEl.textContent = temp + '°C';
+    
+    // vibration pattern: short pulses every 0.5 sec
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 400]);
+      coolingInterval = setInterval(() => {
+        navigator.vibrate([100, 400]);
+        temp -= 1;
+        if (temp <= 35) {
+          temp = 35;
+          clearInterval(coolingInterval);
+          navigator.vibrate(0);
+          fan.classList.remove('spinning');
+          btn.textContent = 'Start Cooling';
+          coolingActive = false;
+        }
+        tempEl.textContent = temp + '°C';
+      }, 1000);
+    } else {
+      // fallback without vibration
+      coolingInterval = setInterval(() => {
+        temp -= 1;
+        if (temp <= 35) {
+          temp = 35;
+          clearInterval(coolingInterval);
+          fan.classList.remove('spinning');
+          btn.textContent = 'Start Cooling';
+          coolingActive = false;
+        }
+        tempEl.textContent = temp + '°C';
+      }, 1000);
+    }
+  });
 }
 
 // ---------- FLASHLIGHT ----------
@@ -390,15 +477,40 @@ async function startFlashlight() {
 let gyroActive = false;
 function startGyroscope() {
   const div = document.getElementById('gyroData');
-  const horizon = document.querySelector('.horizon');
+  const horizon = document.querySelector('.horizon-bg');
+  
   if (gyroActive) return;
-  gyroActive = true;
-  window.addEventListener('deviceorientation', (e) => {
-    div.innerHTML = `alpha: ${e.alpha?.toFixed(1)}°<br>beta: ${e.beta?.toFixed(1)}°<br>gamma: ${e.gamma?.toFixed(1)}°`;
-    const gamma = e.gamma || 0;
-    const beta  = e.beta  || 0;
+  
+  // iOS 13+ requires permission
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          enableGyro();
+        } else {
+          div.textContent = 'Motion permission denied';
+        }
+      })
+      .catch(console.error);
+  } else {
+    enableGyro();
+  }
+  
+  function enableGyro() {
+    gyroActive = true;
+    window.addEventListener('deviceorientation', handleOrientation);
+  }
+  
+  function handleOrientation(e) {
+    const alpha = e.alpha?.toFixed(1) || 0; // heading
+    const beta  = e.beta  || 0;  // pitch (front/back)
+    const gamma = e.gamma || 0;  // roll (left/right)
+    
+    div.innerHTML = `yaw: ${alpha}°<br>pitch: ${beta.toFixed(1)}°<br>roll: ${gamma.toFixed(1)}°`;
+    
+    // artificial horizon: rotate by gamma, translate vertically by beta
     const rotate = gamma;
-    const translateY = (beta / 90) * 50;
-    horizon.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) translateY(${translateY}px)`;
-  });
+    const translateY = (beta / 90) * 50; // move horizon up/down in percentage of half container
+    horizon.style.transform = `translate(-50%, -50%) rotate(${rotate}deg) translateY(${translateY}%)`;
+  }
 }
