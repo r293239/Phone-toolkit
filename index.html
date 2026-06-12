@@ -15,6 +15,9 @@
 <body>
   <header>
     <h1><i class="fa-solid fa-toolbox"></i> Phone Toolkit</h1>
+    <button id="themeToggle" class="theme-btn" aria-label="Toggle dark/light mode">
+      <i class="fa-solid fa-moon"></i>
+    </button>
   </header>
   <main>
     <!-- Dashboard (default view) -->
@@ -35,15 +38,16 @@
       </div>
     </div>
 
-    <!-- Individual tool views (hidden by default) -->
+    <!-- Individual tool views -->
     <div id="thermometerView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Thermometer</h2>
-      <p class="info-text">Using location‑based weather data</p>
+      <p class="info-text">Real-time weather data from Open‑Meteo</p>
       <div class="thermometer-display">
         <div class="mercury"></div>
         <span id="tempValue">--</span>
       </div>
+      <div id="weatherExtra" class="weather-extra"></div>
     </div>
 
     <div id="weatherView" class="view">
@@ -56,9 +60,12 @@
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Compass</h2>
       <div class="compass-container">
-        <div class="compass-rose"><i class="fa-solid fa-location-arrow"></i></div>
+        <div class="compass-dial">
+          <div class="compass-rose"><i class="fa-solid fa-location-arrow"></i></div>
+        </div>
       </div>
       <p id="compassHeading">0°</p>
+      <p id="compassDirection">N</p>
     </div>
 
     <div id="gpsView" class="view">
@@ -70,6 +77,7 @@
     <div id="transitView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Public Transport Nearby</h2>
+      <div id="transitMap"></div>
       <div id="transitList">Searching nearby stops...</div>
     </div>
 
@@ -124,6 +132,11 @@
     <div id="gyroscopeView" class="view">
       <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h2>Gyroscope</h2>
+      <div class="gyro-visual">
+        <div class="attitude-indicator">
+          <div class="horizon"></div>
+        </div>
+      </div>
       <div id="gyroData">No motion data</div>
     </div>
   </main>
