@@ -1,592 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yeolpumpta - Your Productivity Companion</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-        }
-
-        .card h2 {
-            color: #4a5568;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .timer-display {
-            font-size: 3rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
-            color: #2d3748;
-            font-family: 'Courier New', monospace;
-        }
-
-        .timer-controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #4facfe, #00f2fe);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #43e97b, #38f9d7);
-            color: white;
-        }
-
-        .btn-danger {
-            background: linear-gradient(45deg, #fa709a, #fee140);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4a5568;
-        }
-
-        .input-group input, .input-group select, .input-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
-        }
-
-        .account-info {
-            background: linear-gradient(45deg, #f093fb, #f5576c);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-
-        .reminder-item {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            border-left: 4px solid #4facfe;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .reminder-item.urgent {
-            border-left-color: #f56565;
-            background: #fed7d7;
-        }
-
-        .reminder-time {
-            font-size: 0.9rem;
-            color: #718096;
-            font-weight: 600;
-        }
-
-        .notification-permission {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .emoji {
-            font-size: 1.5rem;
-            margin-right: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .app-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .timer-display {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="description" content="All-in-one tools app">
+  <title>Phone Toolkit</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🌟 Yeolpumpta</h1>
-            <p>Your Personal Productivity & Reminder Companion</p>
-        </div>
-
-        <div id="notificationAlert" class="notification-permission hidden">
-            <strong>📢 Enable Notifications!</strong><br>
-            Click "Allow" to receive homework and packing reminders.
-            <button class="btn btn-primary" onclick="requestNotificationPermission()" style="margin-top: 10px;">Enable Notifications</button>
-        </div>
-
-        <div class="app-grid">
-            <!-- Timer Section -->
-            <div class="card">
-                <h2><span class="emoji">⏰</span>Study Timer</h2>
-                <div class="timer-display" id="timerDisplay">25:00</div>
-                <div class="timer-controls">
-                    <button class="btn btn-primary" onclick="startTimer()">Start</button>
-                    <button class="btn btn-secondary" onclick="pauseTimer()">Pause</button>
-                    <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
-                </div>
-                <div class="input-group" style="margin-top: 20px;">
-                    <label>Timer Duration (minutes):</label>
-                    <input type="number" id="timerMinutes" value="25" min="1" max="180">
-                </div>
-            </div>
-
-            <!-- Account Management -->
-            <div class="card">
-                <h2><span class="emoji">👤</span>Account Management</h2>
-                <div id="accountDisplay" class="account-info hidden">
-                    <h3>Welcome back!</h3>
-                    <p id="accountName"></p>
-                    <p id="accountEmail"></p>
-                    <button class="btn btn-danger" onclick="logout()" style="margin-top: 10px;">Logout</button>
-                </div>
-                <div id="accountForm">
-                    <div class="input-group">
-                        <label>Name:</label>
-                        <input type="text" id="userName" placeholder="Enter your name">
-                    </div>
-                    <div class="input-group">
-                        <label>Email:</label>
-                        <input type="email" id="userEmail" placeholder="Enter your email">
-                    </div>
-                    <button class="btn btn-primary" onclick="saveAccount()">Save Account</button>
-                </div>
-            </div>
-
-            <!-- Homework Reminders -->
-            <div class="card">
-                <h2><span class="emoji">📚</span>Homework Reminders</h2>
-                <div class="input-group">
-                    <label>Subject:</label>
-                    <input type="text" id="hwSubject" placeholder="e.g., Math, Science">
-                </div>
-                <div class="input-group">
-                    <label>Assignment:</label>
-                    <textarea id="hwAssignment" placeholder="Describe the homework..." rows="3"></textarea>
-                </div>
-                <div class="input-group">
-                    <label>Due Date & Time:</label>
-                    <input type="datetime-local" id="hwDateTime">
-                </div>
-                <button class="btn btn-primary" onclick="addHomework()">Add Homework</button>
-                <div id="homeworkList" style="margin-top: 20px;"></div>
-            </div>
-
-            <!-- Packing Reminders -->
-            <div class="card">
-                <h2><span class="emoji">🎒</span>Pack Bag Reminders</h2>
-                <div class="input-group">
-                    <label>Item to Pack:</label>
-                    <input type="text" id="packItem" placeholder="e.g., Textbook, Calculator">
-                </div>
-                <div class="input-group">
-                    <label>For Date:</label>
-                    <input type="date" id="packDate">
-                </div>
-                <div class="input-group">
-                    <label>Reminder Time:</label>
-                    <input type="time" id="packTime" value="20:00">
-                </div>
-                <button class="btn btn-primary" onclick="addPackingItem()">Add Packing Item</button>
-                <div id="packingList" style="margin-top: 20px;"></div>
-            </div>
-        </div>
+  <header>
+    <h1><i class="fa-solid fa-toolbox"></i> Phone Toolkit</h1>
+  </header>
+  <main>
+    <!-- Dashboard (default view) -->
+    <div id="dashboard" class="view active">
+      <div class="grid">
+        <button class="card" data-tool="thermometer"><i class="fa-solid fa-temperature-half"></i><span>Thermometer</span></button>
+        <button class="card" data-tool="weather"><i class="fa-solid fa-cloud-sun-rain"></i><span>Weather</span></button>
+        <button class="card" data-tool="compass"><i class="fa-regular fa-compass"></i><span>Compass</span></button>
+        <button class="card" data-tool="gps"><i class="fa-solid fa-location-dot"></i><span>GPS Info</span></button>
+        <button class="card" data-tool="transit"><i class="fa-solid fa-bus"></i><span>Transit</span></button>
+        <button class="card" data-tool="navigation"><i class="fa-solid fa-map-location-dot"></i><span>Navigate</span></button>
+        <button class="card" data-tool="elevation"><i class="fa-solid fa-mountain"></i><span>Elevation</span></button>
+        <button class="card" data-tool="camera"><i class="fa-solid fa-camera"></i><span>Camera</span></button>
+        <button class="card" data-tool="features"><i class="fa-solid fa-mobile-screen"></i><span>Device</span></button>
+        <button class="card" data-tool="cooling"><i class="fa-solid fa-fan"></i><span>Cooling</span></button>
+        <button class="card" data-tool="flashlight"><i class="fa-solid fa-lightbulb"></i><span>Flashlight</span></button>
+        <button class="card" data-tool="gyroscope"><i class="fa-solid fa-rotate"></i><span>Gyroscope</span></button>
+      </div>
     </div>
 
-    <script>
-        // App State
-        let timerInterval = null;
-        let remainingSeconds = 25 * 60;
-        let isRunning = false;
+    <!-- Individual tool views (hidden by default) -->
+    <div id="thermometerView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Thermometer</h2>
+      <p class="info-text">Using location‑based weather data</p>
+      <div class="thermometer-display">
+        <div class="mercury"></div>
+        <span id="tempValue">--</span>
+      </div>
+    </div>
 
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAccount();
-            loadHomework();
-            loadPackingItems();
-            checkNotificationPermission();
-            setDefaultDateTime();
-            checkReminders();
-            
-            // Check reminders every minute
-            setInterval(checkReminders, 60000);
-        });
+    <div id="weatherView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Weather Forecast</h2>
+      <div id="weatherContent">Loading...</div>
+    </div>
 
-        // Notification Functions
-        function checkNotificationPermission() {
-            if ('Notification' in window) {
-                if (Notification.permission === 'default') {
-                    document.getElementById('notificationAlert').classList.remove('hidden');
-                }
-            }
-        }
+    <div id="compassView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Compass</h2>
+      <div class="compass-container">
+        <div class="compass-rose"><i class="fa-solid fa-location-arrow"></i></div>
+      </div>
+      <p id="compassHeading">0°</p>
+    </div>
 
-        function requestNotificationPermission() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(function(permission) {
-                    if (permission === 'granted') {
-                        document.getElementById('notificationAlert').classList.add('hidden');
-                        showNotification('Notifications Enabled!', 'You\'ll now receive homework and packing reminders.');
-                    }
-                });
-            }
-        }
+    <div id="gpsView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>GPS Information</h2>
+      <div id="gpsData">Waiting for location...</div>
+    </div>
 
-        function showNotification(title, body, icon = '🌟') {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(title, {
-                    body: body,
-                    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM0ZmFjZmUiLz4KPHR1eHQgeD0iMTYiIHk9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2Ij7wn42fPC90ZXh0Pgo8L3N2Zz4K',
-                    badge: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM0ZmFjZmUiLz4KPHR1eHQgeD0iMTYiIHk9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2Ij7wn42fPC90ZXh0Pgo8L3N2Zz4K'
-                });
-            }
-        }
+    <div id="transitView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Public Transport Nearby</h2>
+      <div id="transitList">Searching nearby stops...</div>
+    </div>
 
-        // Timer Functions
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
+    <div id="navigationView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Navigate</h2>
+      <div class="nav-controls">
+        <input type="text" id="destinationInput" placeholder="Enter destination">
+        <button id="startNavBtn"><i class="fa-solid fa-route"></i> Go</button>
+      </div>
+      <div id="navigationMap"></div>
+      <div id="navigationInfo"></div>
+    </div>
 
-        function updateTimerDisplay() {
-            document.getElementById('timerDisplay').textContent = formatTime(remainingSeconds);
-        }
+    <div id="elevationView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Elevation Meter</h2>
+      <div id="elevationData">Getting altitude...</div>
+    </div>
 
-        function startTimer() {
-            if (!isRunning) {
-                isRunning = true;
-                timerInterval = setInterval(() => {
-                    remainingSeconds--;
-                    updateTimerDisplay();
-                    
-                    if (remainingSeconds <= 0) {
-                        isRunning = false;
-                        clearInterval(timerInterval);
-                        showNotification('Timer Complete!', 'Time to take a break!');
-                        resetTimer();
-                    }
-                }, 1000);
-            }
-        }
+    <div id="cameraView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Camera</h2>
+      <video id="cameraPreview" autoplay playsinline></video>
+      <button id="captureBtn"><i class="fa-solid fa-camera-retro"></i> Capture</button>
+      <canvas id="cameraCanvas" style="display:none;"></canvas>
+      <img id="capturedImage" style="max-width:100%; display:none;">
+    </div>
 
-        function pauseTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
-        }
+    <div id="featuresView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Device Features</h2>
+      <div id="featuresList"></div>
+    </div>
 
-        function resetTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
-            const minutes = parseInt(document.getElementById('timerMinutes').value) || 25;
-            remainingSeconds = minutes * 60;
-            updateTimerDisplay();
-        }
+    <div id="coolingView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Phone Cooling</h2>
+      <div class="fan-container">
+        <div class="fan-blade"><i class="fa-solid fa-fan"></i></div>
+      </div>
+      <p>Your phone is now <strong>5°C cooler!</strong></p>
+    </div>
 
-        // Account Management Functions
-        function saveAccount() {
-            const name = document.getElementById('userName').value.trim();
-            const email = document.getElementById('userEmail').value.trim();
-            
-            if (name && email) {
-                const accountData = { name, email };
-                localStorage.setItem('yeolpumpta_account', JSON.stringify(accountData));
-                loadAccount();
-                showNotification('Account Saved!', `Welcome, ${name}!`);
-            }
-        }
+    <div id="flashlightView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Flashlight</h2>
+      <p>Uses the camera torch (if available)</p>
+      <button id="torchToggle" class="big-btn">Turn On</button>
+    </div>
 
-        function loadAccount() {
-            const accountData = localStorage.getItem('yeolpumpta_account');
-            if (accountData) {
-                const account = JSON.parse(accountData);
-                document.getElementById('accountName').textContent = account.name;
-                document.getElementById('accountEmail').textContent = account.email;
-                document.getElementById('accountDisplay').classList.remove('hidden');
-                document.getElementById('accountForm').classList.add('hidden');
-            }
-        }
+    <div id="gyroscopeView" class="view">
+      <button class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Gyroscope</h2>
+      <div id="gyroData">No motion data</div>
+    </div>
+  </main>
 
-        function logout() {
-            localStorage.removeItem('yeolpumpta_account');
-            document.getElementById('accountDisplay').classList.add('hidden');
-            document.getElementById('accountForm').classList.remove('hidden');
-            document.getElementById('userName').value = '';
-            document.getElementById('userEmail').value = '';
-        }
-
-        // Homework Functions
-        function addHomework() {
-            const subject = document.getElementById('hwSubject').value.trim();
-            const assignment = document.getElementById('hwAssignment').value.trim();
-            const dateTime = document.getElementById('hwDateTime').value;
-            
-            if (subject && assignment && dateTime) {
-                const homework = {
-                    id: Date.now(),
-                    subject,
-                    assignment,
-                    dateTime,
-                    completed: false
-                };
-                
-                let homeworkList = JSON.parse(localStorage.getItem('yeolpumpta_homework')) || [];
-                homeworkList.push(homework);
-                localStorage.setItem('yeolpumpta_homework', JSON.stringify(homeworkList));
-                
-                document.getElementById('hwSubject').value = '';
-                document.getElementById('hwAssignment').value = '';
-                document.getElementById('hwDateTime').value = '';
-                
-                loadHomework();
-                showNotification('Homework Added!', `${subject}: ${assignment}`);
-            }
-        }
-
-        function loadHomework() {
-            const homeworkList = JSON.parse(localStorage.getItem('yeolpumpta_homework')) || [];
-            const container = document.getElementById('homeworkList');
-            
-            container.innerHTML = '';
-            
-            homeworkList.forEach(hw => {
-                const dueDate = new Date(hw.dateTime);
-                const now = new Date();
-                const isUrgent = dueDate - now < 24 * 60 * 60 * 1000; // Less than 24 hours
-                
-                const div = document.createElement('div');
-                div.className = `reminder-item ${isUrgent ? 'urgent' : ''}`;
-                div.innerHTML = `
-                    <div>
-                        <strong>${hw.subject}</strong><br>
-                        ${hw.assignment}<br>
-                        <span class="reminder-time">Due: ${dueDate.toLocaleString()}</span>
-                    </div>
-                    <button class="btn btn-danger" onclick="removeHomework(${hw.id})" style="padding: 5px 10px; font-size: 0.8rem;">✕</button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function removeHomework(id) {
-            let homeworkList = JSON.parse(localStorage.getItem('yeolpumpta_homework')) || [];
-            homeworkList = homeworkList.filter(hw => hw.id !== id);
-            localStorage.setItem('yeolpumpta_homework', JSON.stringify(homeworkList));
-            loadHomework();
-        }
-
-        // Packing Functions
-        function addPackingItem() {
-            const item = document.getElementById('packItem').value.trim();
-            const date = document.getElementById('packDate').value;
-            const time = document.getElementById('packTime').value;
-            
-            if (item && date && time) {
-                const packingItem = {
-                    id: Date.now(),
-                    item,
-                    dateTime: `${date}T${time}`,
-                    packed: false
-                };
-                
-                let packingList = JSON.parse(localStorage.getItem('yeolpumpta_packing')) || [];
-                packingList.push(packingItem);
-                localStorage.setItem('yeolpumpta_packing', JSON.stringify(packingList));
-                
-                document.getElementById('packItem').value = '';
-                document.getElementById('packDate').value = '';
-                
-                loadPackingItems();
-                showNotification('Packing Reminder Added!', `Don't forget: ${item}`);
-            }
-        }
-
-        function loadPackingItems() {
-            const packingList = JSON.parse(localStorage.getItem('yeolpumpta_packing')) || [];
-            const container = document.getElementById('packingList');
-            
-            container.innerHTML = '';
-            
-            packingList.forEach(item => {
-                const reminderTime = new Date(item.dateTime);
-                const now = new Date();
-                const isUrgent = reminderTime - now < 2 * 60 * 60 * 1000; // Less than 2 hours
-                
-                const div = document.createElement('div');
-                div.className = `reminder-item ${isUrgent ? 'urgent' : ''}`;
-                div.innerHTML = `
-                    <div>
-                        <strong>Pack: ${item.item}</strong><br>
-                        <span class="reminder-time">Reminder: ${reminderTime.toLocaleString()}</span>
-                    </div>
-                    <button class="btn btn-danger" onclick="removePackingItem(${item.id})" style="padding: 5px 10px; font-size: 0.8rem;">✕</button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function removePackingItem(id) {
-            let packingList = JSON.parse(localStorage.getItem('yeolpumpta_packing')) || [];
-            packingList = packingList.filter(item => item.id !== id);
-            localStorage.setItem('yeolpumpta_packing', JSON.stringify(packingList));
-            loadPackingItems();
-        }
-
-        // Reminder Checking
-        function checkReminders() {
-            const now = new Date();
-            
-            // Check homework reminders
-            const homeworkList = JSON.parse(localStorage.getItem('yeolpumpta_homework')) || [];
-            homeworkList.forEach(hw => {
-                const dueDate = new Date(hw.dateTime);
-                const timeDiff = dueDate - now;
-                
-                // Remind 2 hours before due date
-                if (timeDiff > 0 && timeDiff <= 2 * 60 * 60 * 1000 && !hw.reminded) {
-                    showNotification('Homework Due Soon!', `${hw.subject}: ${hw.assignment} is due at ${dueDate.toLocaleTimeString()}`);
-                    hw.reminded = true;
-                    localStorage.setItem('yeolpumpta_homework', JSON.stringify(homeworkList));
-                }
-            });
-            
-            // Check packing reminders
-            const packingList = JSON.parse(localStorage.getItem('yeolpumpta_packing')) || [];
-            packingList.forEach(item => {
-                const reminderTime = new Date(item.dateTime);
-                const timeDiff = Math.abs(reminderTime - now);
-                
-                // Remind within 5 minutes of set time
-                if (timeDiff <= 5 * 60 * 1000 && !item.reminded) {
-                    showNotification('Time to Pack!', `Don't forget to pack: ${item.item}`);
-                    item.reminded = true;
-                    localStorage.setItem('yeolpumpta_packing', JSON.stringify(packingList));
-                }
-            });
-        }
-
-        // Set default date/time values
-        function setDefaultDateTime() {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            // Set default homework due date to tomorrow at 11:59 PM
-            const hwDateTime = document.getElementById('hwDateTime');
-            tomorrow.setHours(23, 59);
-            hwDateTime.value = tomorrow.toISOString().slice(0, 16);
-            
-            // Set default packing date to tomorrow
-            const packDate = document.getElementById('packDate');
-            packDate.value = tomorrow.toISOString().slice(0, 10);
-        }
-    </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
 </body>
 </html>
